@@ -1,11 +1,19 @@
 import { Loader } from "@googlemaps/js-api-loader";
 
 /**
+ * APIサービス群
+ */
+interface Services {
+  places: google.maps.places.PlacesService;
+}
+
+/**
  * APIオブジェクト
  */
 interface ApiObject {
   google: typeof google;
   map: google.maps.Map;
+  services: Services;
 }
 
 /**
@@ -36,9 +44,16 @@ export class GoogleMaps {
         center: new google.maps.LatLng(35.68944, 139.69167), // とりあえず都庁
         zoom: 15,
       });
+      const { PlacesService } = (await google.maps.importLibrary(
+        "places"
+      )) as google.maps.PlacesLibrary;
+
       this.api = {
         google,
         map,
+        services: {
+          places: new PlacesService(map),
+        },
       };
     } catch (error) {
       console.error("GoogleMaps Init Error.", error);
@@ -59,14 +74,19 @@ export class GoogleMaps {
    * @param lat 経度
    * @param lng 緯度
    */
-  addMarker(lat: number, lng: number): google.maps.Marker {
+  addMarker(lat: number, lng: number, options: any): google.maps.Marker {
     if (!this.api) {
       throw new Error("Google Map API is nt initialized.");
     }
-    return new google.maps.Marker({
-      position: { lat, lng },
-      map: this.api.map,
-    });
+    return new google.maps.Marker(
+      Object.assign(
+        {
+          position: { lat, lng },
+          map: this.api.map,
+        },
+        options
+      )
+    );
   }
 
   /**
@@ -81,15 +101,11 @@ export class GoogleMaps {
     if (!this.api) {
       throw new Error("Google Map API is not initialized.");
     }
-
-    const { PlacesService } = (await google.maps.importLibrary(
-      "places"
-    )) as google.maps.PlacesLibrary;
-    const services = new PlacesService(this.api.map);
-
     const result = await new Promise<google.maps.places.PlaceResult[]>(
       (resolve, reject) => {
-        services.findPlaceFromQuery(
+        // 非同期メソッドの中で存在チェックしてもwarningになるようだ
+        // @ts-ignore
+        this.api!.services.places.findPlaceFromQuery(
           {
             fields: [...fields, "geometry"], // geometryはこの後使うので絶対出力
             query: keyword,
@@ -97,12 +113,12 @@ export class GoogleMaps {
           },
           (results, status) => {
             if (status !== google.maps.places.PlacesServiceStatus.OK) {
-              reject("Stats Error");
+              reject(new Error("Status Error"));
               return;
             }
 
             if (!results) {
-              reject("Result Error");
+              reject(new Error("Result Error"));
               return;
             }
             resolve(results);
@@ -119,6 +135,52 @@ export class GoogleMaps {
         });
       }
     }
+    return result;
+  }
+
+  /**
+   * 特定の箇所から一定の範囲内にある、指定したタイプの場所を列挙
+   * @param lat 経度
+   * @param lng 緯度
+   * @param radius 半径(メートル単位)
+   * @param type 探す場所（施設）の種類
+   */
+  async findNearBy(
+    lat: number,
+    lng: number,
+    radius: number,
+    type: string
+  ): Promise<google.maps.places.PlaceResult[]> {
+    if (!this.api) {
+      throw new Error("Google Map API is not initialized.");
+    }
+    const result = await new Promise<google.maps.places.PlaceResult[]>(
+      (resolve, reject) => {
+        // @ts-ignore
+        this.api!.services.places.nearbySearch(
+          {
+            location: {
+              lat,
+              lng,
+            },
+            radius,
+            type,
+          },
+          (results, status) => {
+            if (status !== google.maps.places.PlacesServiceStatus.OK) {
+              reject(new Error("Status Error"));
+              return;
+            }
+
+            if (!results) {
+              reject(new Error("Result Error"));
+              return;
+            }
+            resolve(results);
+          }
+        );
+      }
+    );
     return result;
   }
 }

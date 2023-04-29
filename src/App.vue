@@ -9,13 +9,28 @@ import SearchForm from "./components/SearchForm.vue";
 
 let maps: GoogleMaps | null = null;
 const mapRef = ref<HTMLDivElement | null>(null);
+const markers: google.maps.Marker[] = [];
+
+/**
+ * マーカー除去
+ */
+const clearMarkers = () => {
+  markers.forEach(m => {
+    m.setMap(null);
+  })
+  markers.splice(0);
+};
 
 /**
  * 場所検索
  */
 const onSearchPlace = async (place: string) => {
   if (!maps) { return; }
+
+  // 一旦マーカーを除去
+  clearMarkers();
   
+  // 目的地を検索
   const results = (await maps.findPlaceFromQuery(place, ["name"])).map<StayPlace>(r => {
     return {
       name: r.name!,
@@ -23,12 +38,26 @@ const onSearchPlace = async (place: string) => {
       lng: r.geometry?.location?.lng()!,
     }
   });
-  if (results.length) {
-    const { lat, lng } = results[0];
-    const marker = maps.addMarker(lat, lng);
-    marker.setTitle(results[0].name);
-  }
-}
+  if (!results.length) { return; }
+
+  // 目的地にマーカーを付ける
+  const { lat, lng } = results[0];
+  markers.push(maps.addMarker(lat, lng, {
+    label: {
+      text: results[0].name,
+      color: "#FF0000",
+      fontSize: "12px",
+    }
+  }));
+
+  // 宿泊施設を列挙
+  const lodgings = (await maps.findNearBy(results[0].lat, results[0].lng, 500, "lodging")).map(l => {
+    return {
+      name: l.name!,
+    }
+  });
+  console.log(lodgings);
+};
 
 onMounted(async() => {
   maps = new GoogleMaps(mapRef.value!);
