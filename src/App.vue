@@ -18,9 +18,15 @@ const onSearchPlace = async (place: string) => {
   const results = (await maps.findPlaceFromQuery(place, ["name"])).map(r => {
     return {
       name: r.name,
+      lat: r.geometry?.location?.lat()!,
+      lng: r.geometry?.location?.lng()!,
     }
   });
-  console.log(results);
+  if (results.length) {
+    const { lat, lng } = results[0];
+    const marker = maps.addMarker(lat, lng);
+    marker.setTitle(results[0].name);
+  }
 }
 
 onMounted(async() => {

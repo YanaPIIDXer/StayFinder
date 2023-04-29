@@ -44,6 +44,21 @@ export class GoogleMaps {
   }
 
   /**
+   * マーカー追加
+   * @param lat 経度
+   * @param lng 緯度
+   */
+  addMarker(lat: number, lng: number): google.maps.Marker {
+    if (!this.map) {
+      throw new Error("Google Map API is nt initialized.");
+    }
+    return new google.maps.Marker({
+      position: { lat, lng },
+      map: this.map,
+    });
+  }
+
+  /**
    *クエリからPlaceを列挙
    * @param keyword 検索キーワード
    * @returns Placeの配列
@@ -88,8 +103,8 @@ export class GoogleMaps {
       const geometry = result[0].geometry;
       if (geometry && geometry.location) {
         this.map.setCenter({
-          lat: geometry.location.lat(),
-          lng: geometry.location.lng(),
+          lat: geometry.location.lat()!,
+          lng: geometry.location.lng()!,
         });
       }
     }
