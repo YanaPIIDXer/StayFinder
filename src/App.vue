@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { GoogleMaps } from "./modules/GoogleMaps";
+import type { StayPlace } from "./interfaces/StayPlace";
 // ↓setup構文だからexportもクソもないのに「exportしろよ」と出るので
 //  defineExposeが悪さしてるとか・・・？
 // @ts-ignore
@@ -15,9 +16,9 @@ const mapRef = ref<HTMLDivElement | null>(null);
 const onSearchPlace = async (place: string) => {
   if (!maps) { return; }
   
-  const results = (await maps.findPlaceFromQuery(place, ["name"])).map(r => {
+  const results = (await maps.findPlaceFromQuery(place, ["name"])).map<StayPlace>(r => {
     return {
-      name: r.name,
+      name: r.name!,
       lat: r.geometry?.location?.lat()!,
       lng: r.geometry?.location?.lng()!,
     }
