@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { loadGoogleMaps } from "./modules/GoogleMaps";
+import { GoogleMaps } from "./modules/GoogleMaps";
+
+let maps: GoogleMaps | null = null;
+const mapRef = ref<HTMLDivElement | null>(null);
 
 onMounted(async() => {
-  const googleMaps = await loadGoogleMaps();
+  maps = new GoogleMaps(mapRef.value!);
+  await maps.init();
 });
 </script>
 
 <template lang="pug">
 .root
+  .map(ref="mapRef")
 </template>
 
 <style lang="sass" scoped>
+.root
+  .map
+    width: 512px
+    height: 512px
+    border: 1px solid #000000
 </style>
