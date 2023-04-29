@@ -1,11 +1,18 @@
 import { Loader } from "@googlemaps/js-api-loader";
 
 /**
+ * APIオブジェクト
+ */
+interface ApiObject {
+  google: typeof google;
+  map: google.maps.Map;
+}
+
+/**
  * GoogleMapsを扱うためのクラス
  */
 export class GoogleMaps {
-  private google: typeof google | null = null;
-  private map: google.maps.Map | null = null;
+  private api: ApiObject | null = null;
 
   /**
    * コンストラクタ
@@ -24,11 +31,15 @@ export class GoogleMaps {
         libraries: ["places"],
         language: "ja",
       });
-      this.google = await loader.load();
-      this.map = new this.google.maps.Map(this.mapElement, {
+      const google = await loader.load();
+      const map = new google.maps.Map(this.mapElement, {
         center: new google.maps.LatLng(35.68944, 139.69167), // とりあえず都庁
         zoom: 15,
       });
+      this.api = {
+        google,
+        map,
+      };
     } catch (error) {
       console.error("GoogleMaps Init Error.", error);
     }
@@ -40,7 +51,7 @@ export class GoogleMaps {
    * @param lng 緯度
    */
   setCenter(lat: number, lng: number): void {
-    this.map?.setCenter({ lat, lng });
+    this.api?.map.setCenter({ lat, lng });
   }
 
   /**
@@ -49,12 +60,12 @@ export class GoogleMaps {
    * @param lng 緯度
    */
   addMarker(lat: number, lng: number): google.maps.Marker {
-    if (!this.map) {
+    if (!this.api) {
       throw new Error("Google Map API is nt initialized.");
     }
     return new google.maps.Marker({
       position: { lat, lng },
-      map: this.map,
+      map: this.api.map,
     });
   }
 
@@ -67,14 +78,14 @@ export class GoogleMaps {
     keyword: string,
     fields: string[] = ["name"]
   ): Promise<google.maps.places.PlaceResult[]> {
-    if (!this.google || !this.map) {
+    if (!this.api) {
       throw new Error("Google Map API is not initialized.");
     }
 
     const { PlacesService } = (await google.maps.importLibrary(
       "places"
     )) as google.maps.PlacesLibrary;
-    const services = new PlacesService(this.map);
+    const services = new PlacesService(this.api.map);
 
     const result = await new Promise<google.maps.places.PlaceResult[]>(
       (resolve, reject) => {
@@ -102,7 +113,7 @@ export class GoogleMaps {
     if (result.length) {
       const geometry = result[0].geometry;
       if (geometry && geometry.location) {
-        this.map.setCenter({
+        this.api.map.setCenter({
           lat: geometry.location.lat()!,
           lng: geometry.location.lng()!,
         });
