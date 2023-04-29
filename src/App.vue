@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { GoogleMaps } from "./modules/GoogleMaps";
+import SearchForm from "./components/SearchForm.vue";
 
 let maps: GoogleMaps | null = null;
 const mapRef = ref<HTMLDivElement | null>(null);
 
-const searchText = ref("");
-
 /**
  * 場所検索
  */
-const onSearchPlace = async () => {
-  if (!maps || !searchText.value) { return; }
+const onSearchPlace = async (place: string) => {
+  if (!maps) { return; }
   
-  const results = await maps.findPlaceFromQuery(searchText.value);
+  const results = await maps.findPlaceFromQuery(place);
   console.log(results);
-
-  searchText.value = "";
 }
 
 onMounted(async() => {
@@ -25,17 +22,15 @@ onMounted(async() => {
 });
 
 defineExpose({
-  searchText,
   onSearchPlace,
+  SearchForm,
 });
 </script>
 
 <template lang="pug">
 .root
   .map(ref="mapRef")
-  form(@submit.prevent="onSearchPlace")
-    input(type="text" v-model="searchText" placeholder="検索したいキーワード")
-    input(type="submit" value="検索")
+  SearchForm(@search="onSearchPlace")
 </template>
 
 <style lang="sass" scoped>
