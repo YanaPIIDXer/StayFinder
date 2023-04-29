@@ -35,6 +35,15 @@ export class GoogleMaps {
   }
 
   /**
+   * 座標を設定
+   * @param lat 経度
+   * @param lng 緯度
+   */
+  setCenter(lat: number, lng: number): void {
+    this.map?.setCenter({ lat, lng });
+  }
+
+  /**
    *クエリからPlaceを列挙
    * @param keyword 検索キーワード
    * @returns Placeの配列
@@ -42,14 +51,14 @@ export class GoogleMaps {
   async findPlaceFromQuery(
     keyword: string
   ): Promise<google.maps.places.PlaceResult[]> {
-    if (!this.google) {
+    if (!this.google || !this.map) {
       throw new Error("Google Map API is not initialized.");
     }
 
     const { PlacesService } = (await google.maps.importLibrary(
       "places"
     )) as google.maps.PlacesLibrary;
-    const services = new PlacesService(this.mapElement);
+    const services = new PlacesService(this.map);
 
     const result = await new Promise<google.maps.places.PlaceResult[]>(
       (resolve, reject) => {
@@ -74,6 +83,15 @@ export class GoogleMaps {
         );
       }
     );
+    if (result.length) {
+      const geometry = result[0].geometry;
+      if (geometry && geometry.location) {
+        this.map.setCenter({
+          lat: geometry.location.lat(),
+          lng: geometry.location.lng(),
+        });
+      }
+    }
     return result;
   }
 }
