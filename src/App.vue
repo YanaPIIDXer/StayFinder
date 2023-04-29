@@ -54,9 +54,21 @@ const onSearchPlace = async (place: string) => {
   const lodgings = (await maps.findNearBy(results[0].lat, results[0].lng, 500, "lodging")).map(l => {
     return {
       name: l.name!,
+      lat: l.geometry?.location?.lat()!,
+      lng: l.geometry?.location?.lng()!,
     }
   });
-  console.log(lodgings);
+  lodgings.forEach(l => {
+    if (!maps) { return; }
+    markers.push(maps.addMarker(l.lat, l.lng, {
+      label: {
+        text: l.name,
+        color: "#00FFFF",
+        fontSize: "6px",
+      }
+    }));
+
+  })
 };
 
 onMounted(async() => {
