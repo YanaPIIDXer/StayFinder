@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { GoogleMaps } from "./modules/GoogleMaps";
+// ↓setup構文だからexportもクソもないのに「exportしろよ」と出るので
+//  defineExposeが悪さしてるとか・・・？
+// @ts-ignore
 import SearchForm from "./components/SearchForm.vue";
 
 let maps: GoogleMaps | null = null;
@@ -12,7 +15,11 @@ const mapRef = ref<HTMLDivElement | null>(null);
 const onSearchPlace = async (place: string) => {
   if (!maps) { return; }
   
-  const results = await maps.findPlaceFromQuery(place);
+  const results = (await maps.findPlaceFromQuery(place, ["name"])).map(r => {
+    return {
+      name: r.name,
+    }
+  });
   console.log(results);
 }
 

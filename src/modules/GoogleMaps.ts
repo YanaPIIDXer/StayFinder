@@ -49,7 +49,8 @@ export class GoogleMaps {
    * @returns Placeの配列
    */
   async findPlaceFromQuery(
-    keyword: string
+    keyword: string,
+    fields: string[] = ["name"]
   ): Promise<google.maps.places.PlaceResult[]> {
     if (!this.google || !this.map) {
       throw new Error("Google Map API is not initialized.");
@@ -64,7 +65,7 @@ export class GoogleMaps {
       (resolve, reject) => {
         services.findPlaceFromQuery(
           {
-            fields: ["name", "geometry"],
+            fields: [...fields, "geometry"], // geometryはこの後使うので絶対出力
             query: keyword,
             language: "ja",
           },
